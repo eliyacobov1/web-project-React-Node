@@ -12,12 +12,17 @@ export type Ticket = {
 
 export type ApiClient = {
     getTickets: () => Promise<Ticket[]>;
+    clone: (ticket: Ticket) => Promise<Ticket>
 }
 
 export const createApiClient = (): ApiClient => {
     return {
         getTickets: () => {
             return axios.get(APIRootPath).then((res) => res.data);
+        },
+
+        clone: (ticket: Ticket) => {
+            return axios.post(APIRootPath, ticket).then()
         }
     }
 }

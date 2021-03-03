@@ -1,7 +1,13 @@
+html {
+	--lh: 1.4rem;
+	line-height: var(--lh);
+}
+
 body {
 	--bg: #ffffff;
 	--fontColor: #1a1a00;
 	--borderColor: #d9d9d9;
+	--btnColor: #076cec;
 	--mainBg: #eef7f7;
 	--darkModeBtnColor: #919191;
 	font-family: 'Open Sans', sans-serif;
@@ -10,6 +16,14 @@ body {
 	color: var(--fontColor);
 	padding-top: 100px;
 	padding: 50px;
+
+	.truncate-overflow {
+		--max-lines: 3.5;
+		position: relative;
+		max-height: calc(var(--lh) * var(--max-lines));
+		text-overflow: fade;
+		overflow: hidden;
+	}
 
 	main {
 		max-width: 1000px;
@@ -80,9 +94,10 @@ body {
 		margin: auto 0 0 auto;
 		background: none;
 		border: none;
+		font-weight: lighter;
 		padding: 0;
 		font-family: arial, sans-serif;
-		color: var(--fontColor);
+		color: var(--btnColor);
 		cursor: pointer;
 	}
 
@@ -96,6 +111,18 @@ body {
 		padding: 5px;
 		font-family: arial, sans-serif;
 		color: var(--fontColor);
+		cursor: pointer;
+	}
+
+	.see-more-btn{
+		font-size: 10pt;
+		margin: 5px auto auto 0;
+		background: none;
+		border: none;
+		font-weight: normal;
+		padding: 0;
+		font-family: arial, sans-serif;
+		color: var(--btnColor);
 		cursor: pointer;
 	}
 
@@ -158,6 +185,7 @@ body {
 body.dark-mode {
 	--bg: #262626;
 	--fontColor: #e1e5e8;
+	--btnColor: #ecdfdf;
 	--borderColor: #1a1a00;
 	--mainBg: #1a1a1a;
 }

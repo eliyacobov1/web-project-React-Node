@@ -28,6 +28,12 @@ app.get(APIPath, (req, res) => {
   res.send(paginatedData);
 });
 
+app.post(APIPath, (req, res) => {
+  const ticket = req.body
+
+  res.send(paginatedData);
+});
+
 app.listen(serverAPIPort);
 console.log('server running', serverAPIPort)
 

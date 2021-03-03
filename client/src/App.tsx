@@ -4,8 +4,8 @@ import {createApiClient, Ticket} from './api';
 
 export type AppState = {
 	tickets?: Ticket[],
-	hiddenTickets?: string[], // id's of hidden tickets
-	expandedTickets?: string[],
+	hiddenTickets?: string[], // ids of hidden tickets
+	expandedTickets?: string[], // ids of expanded tickets
 	hoveredTicket?: string, // ticket which the mouse is hovering over (id)
 	search: string;
 }
@@ -45,6 +45,33 @@ export class App extends React.PureComponent<{}, AppState> {
 	}
 
 	/**
+	 * (Q 1.d) add or remove a ticket id from the expanded tickets array
+	 */
+	toggleExpanded = (id: string) => {
+		let expandedTickets: string[];
+		if(typeof this.state.expandedTickets != "undefined") {
+			expandedTickets = [...this.state.expandedTickets]
+		}
+		else {
+			expandedTickets = []
+		}
+
+		if (expandedTickets.includes(id)){ // delete ticket from expanded array
+			const index = expandedTickets.indexOf(id, 0);
+			if (index > -1) {
+				expandedTickets.splice(index, 1);
+			}
+		}
+		else{ // add ticket to expanded array
+			expandedTickets.push(id)
+		}
+
+		this.setState({
+			expandedTickets: expandedTickets
+		} )
+	}
+
+	/**
 	 * set the currently hovered over ticket to be the given ticket
 	 */
 	setHoveringTicket = (ticket?: Ticket) => {
@@ -67,6 +94,20 @@ export class App extends React.PureComponent<{}, AppState> {
 	}
 
 	/**
+	 * (Q 1.d) return true if the ticket with given
+	 * id should be in expanded view, false otherwise
+	 */
+	isExpanded = (id: string) => {
+		let expandedTickets = this.state.expandedTickets
+		if (typeof expandedTickets != "undefined"){
+			return expandedTickets.includes(id);
+		}
+		else{
+			return false;
+		}
+	}
+
+	/**
 	 * (Q 1.b) make all of the hidden tickets visible again
 	 */
 	restoreTickets() {
@@ -77,22 +118,29 @@ export class App extends React.PureComponent<{}, AppState> {
 
 
 	renderTickets = (tickets: Ticket[], hoveredTicket?: string) => {
-
 		const filteredTickets = tickets
 			.filter((t) => (t.title.toLowerCase() + t.content.toLowerCase()).includes(this.state.search.toLowerCase()));
 
-		// Q 1.a, render a ticket only if it is not hidden
+		// Q 1.b, render a ticket only if it is not hidden
 		return (<ul className='tickets'>
 			{filteredTickets.map((ticket) => ( this.isHidden(ticket.id) ? null:
-				<li key={ticket.id} className='ticket'
-					onMouseOver={() => this.setHoveringTicket(ticket)}
-					onMouseLeave={() => this.setHoveringTicket()}>
-					{hoveredTicket === ticket.id && <button onClick={()=>this.hideTicket(ticket.id)}>Hide</button>} {/*Q 1.b*/}
+				<li key={ticket.id} className={'ticket'}
+					onMouseOver={() => this.setHoveringTicket(ticket)}  onMouseLeave={() => this.setHoveringTicket()}>
+					{/* ticket starts here*/}
+					{hoveredTicket === ticket.id && <button onClick={()=>this.hideTicket(ticket.id)}>Hide</button>}
 					<h5 className='title'>{ticket.title}</h5>
-					<h5 className='content'>{ticket.content}</h5>
+					{/* Q 1.d, only 3 lines of the ticket are visible by default*/}
+					<div className={this.isExpanded(ticket.id) ? '' : 'truncate-overflow'}>
+						<h5 className='content'>{ticket.content}</h5>
+					</div>
+					{/* see more/ see less button */}
+					<button onClick={() => this.toggleExpanded(ticket.id)} className='see-more-btn'>
+						{this.isExpanded(ticket.id) ? 'See less' : 'See more'}
+					</button>
 					<footer>
 						<div className='meta-data'>By {ticket.userEmail} | { new Date(ticket.creationTime).toLocaleString()}</div>
 					</footer>
+					{/* ticket ends here*/}
 				</li>))}
 		</ul>);
 	}
