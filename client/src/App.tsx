@@ -1,7 +1,7 @@
 import React from 'react';
 import './App.scss';
 import {createApiClient, Ticket} from './api';
-import Pagination from './Pagination'
+import Pagination from './components/Pagination'
 
 export type AppState = {
 	tickets?: Ticket[],
@@ -205,7 +205,7 @@ export class App extends React.PureComponent<{}, AppState> {
 			{this.renderHiddenCount(numHiddenTickets)}
 			</div>
 			{tickets ? this.renderTickets(tickets, hoveredTicket) : <h2>Loading..</h2>}
-			<Pagination api={api} app={this}/>
+			<div className='page-section'><Pagination api={api} app={this}/></div>
 		</main>)
 	}
 }

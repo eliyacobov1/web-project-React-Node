@@ -90,6 +90,13 @@ body {
 		font-size: 12px;
 	}
 
+	.page-section{
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: flex-start;
+	}
+
 	button {
 		font-size: 10pt;
 		margin: auto 0 0 auto;
