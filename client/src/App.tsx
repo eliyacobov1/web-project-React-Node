@@ -1,9 +1,11 @@
 import React from 'react';
 import './App.scss';
 import {createApiClient, Ticket} from './api';
+import Pagination from './Pagination'
 
 export type AppState = {
 	tickets?: Ticket[],
+	numTickets?: number, // total number of tickets, used for pagination
 	hiddenTickets?: string[], // ids of hidden tickets
 	expandedTickets?: string[], // ids of expanded tickets
 	hoveredTicket?: string, // ticket which the mouse is hovering over (id)
@@ -22,8 +24,17 @@ export class App extends React.PureComponent<{}, AppState> {
 
 	async componentDidMount() {
 		this.setState({
-			tickets: await api.getTickets()
+			tickets: await api.getTicketPage(1),
+			numTickets: (await api.getTickets()).length
 		});
+		console.log(await api.getTickets())
+	}
+
+	async cloneTicket(ticket: Ticket) {
+		const tickets = this.state.tickets ? this.state.tickets : []
+		this.setState({
+			tickets: [await api.clone(ticket), ...tickets]
+		})
 	}
 
 	/**
@@ -131,14 +142,15 @@ export class App extends React.PureComponent<{}, AppState> {
 					<h5 className='title'>{ticket.title}</h5>
 					{/* Q 1.d, only 3 lines of the ticket are visible by default*/}
 					<div className={this.isExpanded(ticket.id) ? '' : 'truncate-overflow'}>
-						<h5 className='content'>{ticket.content}</h5>
-					</div>
+						<h5 className='content'>{ticket.content}</h5></div>
 					{/* see more/ see less button */}
 					<button onClick={() => this.toggleExpanded(ticket.id)} className='see-more-btn'>
-						{this.isExpanded(ticket.id) ? 'See less' : 'See more'}
-					</button>
+						{this.isExpanded(ticket.id) ? 'See less' : 'See more'}</button>
 					<footer>
 						<div className='meta-data'>By {ticket.userEmail} | { new Date(ticket.creationTime).toLocaleString()}</div>
+						{/* clone button */}
+						<button onClick={() => this.cloneTicket(ticket)} className='clone-btn'>
+							clone</button>
 					</footer>
 					{/* ticket ends here*/}
 				</li>))}
@@ -182,10 +194,9 @@ export class App extends React.PureComponent<{}, AppState> {
 		const numHiddenTickets = hiddenTickets ? hiddenTickets.length : 0;
 
 		return (<main>
-			<div className='wrapper-col'>
-				<h1>Tickets List</h1>
-				<h4 className='dark-mode-btn' onClick={() => this.toggleDarkMode()}>Toggle Light/Dark Mode</h4>
-			</div>
+			<h1>Tickets List</h1>
+			{/* Q 1.c Dark mode button */}
+			<h4 className='btn btn-outline-secondary dark-mode-btn' onClick={() => this.toggleDarkMode()}>Toggle Light/Dark Mode</h4>
 			<header>
 				<input type="search" placeholder="Search..." onChange={(e) => this.onSearch(e.target.value)}/>
 			</header>
@@ -194,6 +205,7 @@ export class App extends React.PureComponent<{}, AppState> {
 			{this.renderHiddenCount(numHiddenTickets)}
 			</div>
 			{tickets ? this.renderTickets(tickets, hoveredTicket) : <h2>Loading..</h2>}
+			<Pagination api={api} app={this}/>
 		</main>)
 	}
 }

@@ -12,6 +12,7 @@
       <list>
         <option value="TypeScript JSX File" />
         <option value="JavaScript File" />
+        <option value="TypeScript File" />
       </list>
     </option>
   </component>
@@ -47,7 +48,7 @@
       <option name="presentableId" value="Default" />
       <updated>1614618111861</updated>
       <workItem from="1614618114969" duration="17265000" />
-      <workItem from="1614686410811" duration="58665000" />
+      <workItem from="1614686410811" duration="95906000" />
     </task>
     <servers />
   </component>
