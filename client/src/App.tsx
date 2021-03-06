@@ -6,19 +6,27 @@ import TicketList from "./components/TicketList";
 
 export type AppState = {
 	tickets?: Ticket[],
+	theme: number,
 	numTickets?: number, // total number of tickets, used for pagination
 	hiddenTickets?: string[], // ids of hidden tickets
-	expandedTickets?: string[], // ids of expanded tickets
+	commentSection?: string[], // ids of tickets with open comment section
+	expandedTickets?: string[], // ids of tickets in expanded view
 	hoveredTicket?: string, // ticket which the mouse is hovering over (id)
 	search: string;
 }
+
+const DARK_MODE = 1
+const LIGHT_MODE = 0
+export const TOGGLE_EXPAND = 0
+export const TOGGLE_COMMENTS = 1
 
 const api = createApiClient();
 
 export class App extends React.PureComponent<{}, AppState> {
 
 	state: AppState = {
-		search: ''
+		search: '',
+		theme: LIGHT_MODE
 	}
 
 	searchDebounce: any = null;
@@ -26,6 +34,7 @@ export class App extends React.PureComponent<{}, AppState> {
 	async componentDidMount() {
 		this.setState({
 			tickets: await api.getPage(1),
+			theme: LIGHT_MODE,
 			numTickets: (await api.getTickets()).length
 		});
 	}
@@ -44,19 +53,41 @@ export class App extends React.PureComponent<{}, AppState> {
 	}
 
 	/**
-	 * Q3 Show or hide the comment section
-	 * of the ticket with the given id
+	 * (Q3) Show or hide the comment section (Q1.d) add or
+	 * remove a ticket id from the expanded tickets array
+	 * of the ticket with the given id.
+	 * @param param indicates which aspect of the ticket to change
+	 *   (expand the ticket or show the ticket's comment section)
+	 * @param id the id of the ticket to change the status of
 	 */
-	toggleCommentSection = (id: string) => {
-		let tickets = this.state.tickets ? [...this.state.tickets] : []
-		for(let i = 0; i < tickets.length; i += 1) {
-			if(tickets[i].id === id) {
-				const showComments = tickets[i].commentSection;
-				tickets[i].commentSection = !showComments;
-				this.setState({
-					tickets: tickets
-				})
+	toggleTicketStatus = (param: number, id: string) => {
+		let arr: string[]
+		if(param === TOGGLE_EXPAND){
+			arr = this.state.expandedTickets ?
+				[...this.state.expandedTickets] : [];
+		}
+		else{
+			arr = this.state.commentSection ?
+				[...this.state.commentSection] : [];
+		}
+		if (arr.includes(id)){
+			const index = arr.indexOf(id, 0);
+			if (index > -1) {
+				arr.splice(index, 1);
 			}
+		}
+		else{
+			arr.push(id)
+		}
+		if (param === TOGGLE_EXPAND){
+			this.setState({
+			expandedTickets: arr
+			})
+		}
+		else{
+			this.setState({
+				commentSection: arr
+			})
 		}
 	}
 
@@ -97,33 +128,6 @@ export class App extends React.PureComponent<{}, AppState> {
 	}
 
 	/**
-	 * (Q1.d) add or remove a ticket id from the expanded tickets array
-	 */
-	toggleExpanded = (id: string) => {
-		let expandedTickets: string[];
-		if(typeof this.state.expandedTickets != "undefined") {
-			expandedTickets = [...this.state.expandedTickets]
-		}
-		else {
-			expandedTickets = []
-		}
-
-		if (expandedTickets.includes(id)){ // delete ticket from expanded array
-			const index = expandedTickets.indexOf(id, 0);
-			if (index > -1) {
-				expandedTickets.splice(index, 1);
-			}
-		}
-		else{ // add ticket to expanded array
-			expandedTickets.push(id)
-		}
-
-		this.setState({
-			expandedTickets: expandedTickets
-		} )
-	}
-
-	/**
 	 * set the currently hovered over ticket to be the given ticket
 	 */
 	setHoveringTicket = (ticket?: Ticket) => {
@@ -153,6 +157,20 @@ export class App extends React.PureComponent<{}, AppState> {
 		let expandedTickets = this.state.expandedTickets
 		if (typeof expandedTickets != "undefined"){
 			return expandedTickets.includes(id);
+		}
+		else{
+			return false;
+		}
+	}
+
+	/**
+	 * (Q3) return true if the ticket with given id should
+	 * be viewing it's comment section, false otherwise
+	 */
+	 areCommentsVisible = (id: string) => {
+		let commentSection = this.state.commentSection
+		if (typeof commentSection != "undefined"){
+			return commentSection.includes(id);
 		}
 		else{
 			return false;
@@ -200,10 +218,14 @@ export class App extends React.PureComponent<{}, AppState> {
 	 */
 	toggleDarkMode = () => {
 		document.body.classList.toggle('dark-mode')
+		let theme = this.state.theme
+		this.setState({
+			theme: theme === LIGHT_MODE  ? DARK_MODE : LIGHT_MODE
+		})
 	}
 
 	render() {
-		const {tickets, hiddenTickets} = this.state;
+		const {tickets, hiddenTickets, theme} = this.state;
 		const numHiddenTickets = hiddenTickets ? hiddenTickets.length : 0;
 		const filteredTickets = tickets ? tickets.filter((t) =>
 								(t.title.toLowerCase() + t.content.toLowerCase())
@@ -213,7 +235,7 @@ export class App extends React.PureComponent<{}, AppState> {
 				<main>
 				<h1>Tickets List</h1>
 				{/* Q1.c Dark mode button */}
-				<h4 className='btn btn-outline-secondary dark-mode-btn' onClick={() => this.toggleDarkMode()}>Toggle Light/Dark Mode</h4>
+				<h4 className='btn btn-outline-secondary dark-mode-btn' onClick={() => this.toggleDarkMode()}>Toggle {theme === LIGHT_MODE  ? 'Dark' : 'Light'} Mode</h4>
 				<header>
 					<input type="search" placeholder="Search..." onChange={(e) => this.onSearch(e.target.value)}/>
 				</header>

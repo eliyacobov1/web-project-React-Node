@@ -10,7 +10,6 @@ export type Ticket = {
     creationTime: number;
     userEmail: string;
     labels?: string[];
-    commentSection: boolean; // Q3 show comment section indicator
     comments?: Comment[]
 }
 

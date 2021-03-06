@@ -1,5 +1,5 @@
 import React from "react";
-import App from "../App";
+import App, {TOGGLE_COMMENTS, TOGGLE_EXPAND} from "../App";
 import {Ticket} from "../api";
 import CreateCommentBox from "./CreateCommentBox";
 import CommentSection from "./CommentSection";
@@ -24,9 +24,9 @@ const TicketList = (props: {
                 <div className={app.isExpanded(ticket.id) ? '' : 'truncate-overflow'}>
                     <h5 className='content'>{ticket.content}</h5></div>
                 {/* see more/ see less button */}
-                <button onClick={() => app.toggleExpanded(ticket.id)} className='see-more-btn'>
+                <button onClick={() => app.toggleTicketStatus(TOGGLE_EXPAND, ticket.id)} className='see-more-btn'>
                     {app.isExpanded(ticket.id) ? 'See less' : 'See more'}</button>
-                {ticket.commentSection && <div>
+                {app.areCommentsVisible(ticket.id) && <div>
                     {/* comment section and new comment */}
                     <hr className='bold-line'/>
                     <CreateCommentBox handleSubmit={app.addComment} ticketID={ticket.id}/>
@@ -42,8 +42,8 @@ const TicketList = (props: {
                     <div className='wrapper-row'>
                     {/* Q3 show/hide comments button */}
                     <button className="bottom-right-btn bg-info"
-                            onClick={() => app.toggleCommentSection(ticket.id)}>
-                        {ticket.commentSection ? 'Hide Comments': 'Show Comments'}
+                            onClick={() => app.toggleTicketStatus(TOGGLE_COMMENTS, ticket.id)}>
+                        {app.areCommentsVisible(ticket.id) ? 'Hide Comments': 'Show Comments'}
                     </button>
                     {/* clone button */}
                     <button onClick={() => app.cloneTicket(ticket)} className='bottom-right-btn bg-success'>
