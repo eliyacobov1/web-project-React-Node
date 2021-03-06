@@ -1,7 +1,8 @@
 import React from 'react';
 import './App.scss';
-import {createApiClient, Ticket} from './api';
+import {createApiClient, Ticket, Comment} from './api';
 import Pagination from './components/Pagination'
+import TicketList from "./components/TicketList";
 
 export type AppState = {
 	tickets?: Ticket[],
@@ -24,21 +25,61 @@ export class App extends React.PureComponent<{}, AppState> {
 
 	async componentDidMount() {
 		this.setState({
-			tickets: await api.getTicketPage(1),
+			tickets: await api.getPage(1),
 			numTickets: (await api.getTickets()).length
 		});
-		console.log(await api.getTickets())
-	}
-
-	async cloneTicket(ticket: Ticket) {
-		const tickets = this.state.tickets ? this.state.tickets : []
-		this.setState({
-			tickets: [await api.clone(ticket), ...tickets]
-		})
 	}
 
 	/**
-	 * (Q 1.b) event function that hides the ticket with the given id from the user
+	 * Q2.a clone the given ticket
+	 */
+	async cloneTicket(ticket: Ticket) {
+		let newTicket = {...ticket};
+		delete newTicket.id;
+		delete newTicket.comments;
+		delete newTicket.creationTime; // these properties are not duplicated
+		// render the first page where the cloned ticket can be seen
+		api.clone(ticket).then(() => this.componentDidMount())
+		alert('Ticket cloned successfully!')
+	}
+
+	/**
+	 * Q3 Show or hide the comment section
+	 * of the ticket with the given id
+	 */
+	toggleCommentSection = (id: string) => {
+		let tickets = this.state.tickets ? [...this.state.tickets] : []
+		for(let i = 0; i < tickets.length; i += 1) {
+			if(tickets[i].id === id) {
+				const showComments = tickets[i].commentSection;
+				tickets[i].commentSection = !showComments;
+				this.setState({
+					tickets: tickets
+				})
+			}
+		}
+	}
+
+	/**
+	 * Q3 add a comment to the ticket with given id
+	 */
+	addComment = async (id: string, comment: Comment) => {
+		if (!comment)
+			return;
+		let tickets = this.state.tickets ? [...this.state.tickets] : []
+		for(let i = 0; i < tickets.length; i += 1) {
+			if(tickets[i].id === id) {
+				tickets[i] = await api.addComment(tickets[i], comment);
+				this.setState({
+					tickets: tickets
+				})
+				alert('Comment added successfully!')
+			}
+		}
+	}
+
+	/**
+	 * (Q1.b) event function that hides the ticket with the given id from the user
 	 */
 	hideTicket = (id: string) => {
 		let hiddenTickets;
@@ -56,7 +97,7 @@ export class App extends React.PureComponent<{}, AppState> {
 	}
 
 	/**
-	 * (Q 1.d) add or remove a ticket id from the expanded tickets array
+	 * (Q1.d) add or remove a ticket id from the expanded tickets array
 	 */
 	toggleExpanded = (id: string) => {
 		let expandedTickets: string[];
@@ -92,7 +133,7 @@ export class App extends React.PureComponent<{}, AppState> {
 	}
 
 	/**
-	 * (Q 1.b) return true if the ticket with given id is hidden, false otherwise
+	 * (Q1.b) return true if the ticket with given id is hidden, false otherwise
 	 */
 	isHidden = (id: string) => {
 		let hiddenTickets = this.state.hiddenTickets
@@ -105,7 +146,7 @@ export class App extends React.PureComponent<{}, AppState> {
 	}
 
 	/**
-	 * (Q 1.d) return true if the ticket with given
+	 * (Q1.d) return true if the ticket with given
 	 * id should be in expanded view, false otherwise
 	 */
 	isExpanded = (id: string) => {
@@ -119,7 +160,7 @@ export class App extends React.PureComponent<{}, AppState> {
 	}
 
 	/**
-	 * (Q 1.b) make all of the hidden tickets visible again
+	 * (Q1.b) make all of the hidden tickets visible again
 	 */
 	restoreTickets() {
 		this.setState({
@@ -127,40 +168,12 @@ export class App extends React.PureComponent<{}, AppState> {
 		} )
 	}
 
-
-	renderTickets = (tickets: Ticket[], hoveredTicket?: string) => {
-		const filteredTickets = tickets
-			.filter((t) => (t.title.toLowerCase() + t.content.toLowerCase()).includes(this.state.search.toLowerCase()));
-
-		// Q 1.b, render a ticket only if it is not hidden
-		return (<ul className='tickets'>
-			{filteredTickets.map((ticket) => ( this.isHidden(ticket.id) ? null:
-				<li key={ticket.id} className={'ticket'}
-					onMouseOver={() => this.setHoveringTicket(ticket)}  onMouseLeave={() => this.setHoveringTicket()}>
-					{/* ticket starts here*/}
-					{hoveredTicket === ticket.id && <button onClick={()=>this.hideTicket(ticket.id)}>Hide</button>}
-					<h5 className='title'>{ticket.title}</h5>
-					{/* Q 1.d, only 3 lines of the ticket are visible by default*/}
-					<div className={this.isExpanded(ticket.id) ? '' : 'truncate-overflow'}>
-						<h5 className='content'>{ticket.content}</h5></div>
-					{/* see more/ see less button */}
-					<button onClick={() => this.toggleExpanded(ticket.id)} className='see-more-btn'>
-						{this.isExpanded(ticket.id) ? 'See less' : 'See more'}</button>
-					<footer>
-						<div className='meta-data'>By {ticket.userEmail} | { new Date(ticket.creationTime).toLocaleString()}</div>
-						{/* clone button */}
-						<button onClick={() => this.cloneTicket(ticket)} className='clone-btn'>
-							clone</button>
-					</footer>
-					{/* ticket ends here*/}
-				</li>))}
-		</ul>);
+	renderTickets = (tickets: Ticket[]) => {
+		return <TicketList app={this} tickets={tickets}/>
 	}
 
 	onSearch = async (val: string, newPage?: number) => {
-		
 		clearTimeout(this.searchDebounce);
-
 		this.searchDebounce = setTimeout(async () => {
 			this.setState({
 				search: val
@@ -189,24 +202,30 @@ export class App extends React.PureComponent<{}, AppState> {
 		document.body.classList.toggle('dark-mode')
 	}
 
-	render() {	
-		const {tickets, hiddenTickets, hoveredTicket} = this.state;
+	render() {
+		const {tickets, hiddenTickets} = this.state;
 		const numHiddenTickets = hiddenTickets ? hiddenTickets.length : 0;
-
-		return (<main>
-			<h1>Tickets List</h1>
-			{/* Q 1.c Dark mode button */}
-			<h4 className='btn btn-outline-secondary dark-mode-btn' onClick={() => this.toggleDarkMode()}>Toggle Light/Dark Mode</h4>
-			<header>
-				<input type="search" placeholder="Search..." onChange={(e) => this.onSearch(e.target.value)}/>
-			</header>
-			<div className='results wrapper-row'>
-			{tickets ? <div>Showing {tickets.length-numHiddenTickets} results</div> : null }
-			{this.renderHiddenCount(numHiddenTickets)}
-			</div>
-			{tickets ? this.renderTickets(tickets, hoveredTicket) : <h2>Loading..</h2>}
-			<div className='page-section'><Pagination api={api} app={this}/></div>
-		</main>)
+		const filteredTickets = tickets ? tickets.filter((t) =>
+								(t.title.toLowerCase() + t.content.toLowerCase())
+								.includes(this.state.search.toLowerCase())) : null;
+		return (
+			<div id="wrapper"> {/* ensures everything stays in place on window resize */}
+				<main>
+				<h1>Tickets List</h1>
+				{/* Q1.c Dark mode button */}
+				<h4 className='btn btn-outline-secondary dark-mode-btn' onClick={() => this.toggleDarkMode()}>Toggle Light/Dark Mode</h4>
+				<header>
+					<input type="search" placeholder="Search..." onChange={(e) => this.onSearch(e.target.value)}/>
+				</header>
+				<div className='results wrapper-row'>
+				{filteredTickets ? <div>Showing {filteredTickets.length-numHiddenTickets} results</div> : null }
+				{this.renderHiddenCount(numHiddenTickets)}
+				</div>
+				{filteredTickets ? this.renderTickets(filteredTickets) : <h2>Loading..</h2>}
+				{/* render pagination component only when not using search bar*/}
+				{this.state.search === '' && <div className='page-section'><Pagination api={api} app={this}/></div>}
+				</main>
+			</div>)
 	}
 }
 

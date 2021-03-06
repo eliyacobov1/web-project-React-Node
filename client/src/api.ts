@@ -10,12 +10,25 @@ export type Ticket = {
     creationTime: number;
     userEmail: string;
     labels?: string[];
+    commentSection: boolean; // Q3 show comment section indicator
+    comments?: Comment[]
+}
+
+/**
+ * Q3 added anonymous comment mechanism
+ */
+export type Comment = {
+    ticketID: string, // foreign key
+    author: string,
+    content: string,
+    creationTime: number
 }
 
 export type ApiClient = {
-    getTicketPage: (page: number) => Promise<Ticket[]>;
+    getPage: (page: number) => Promise<Ticket[]>;
     getTickets: () => Promise<Ticket[]>;
     clone: (ticket: Ticket) => Promise<Ticket>;
+    addComment: (ticket: Ticket, comment: Comment) => Promise<Ticket>;
 }
 
 export const createApiClient = (): ApiClient => {
@@ -25,18 +38,31 @@ export const createApiClient = (): ApiClient => {
         },
 
         /**
-         * Q 2.b get request endpoint for a specific page
+         * Q2.b get request endpoint for a specific page
          */
-        getTicketPage: (page: number) => {
+        getPage: (page: number) => {
             return axios.get(`${APIRootPagePath}${page}${APIPageLimitQuery}${PAGE_SIZE}`)
-                .then((res) => res.data);
+                .then((res) => res.data).catch(error => console.log(error));
         },
 
         /**
-         * Q 2.a clone method
+         * Q2.a Clone method
          */
-        clone: (ticket: Ticket) => {
-            return axios.post(APIRootPath, ticket).then((res) => res.data)
+        clone: (obj) => {
+            return axios.post(APIRootPath, obj).then((res) => res.data)
+                .catch(error => console.log(error));
+        },
+
+        /**
+         * Q3 add comment to ticket
+         */
+        addComment: (ticket, comment) => {
+            let comments = ticket.comments ? ticket.comments : []
+            comments.push(comment)
+            ticket ={...ticket, comments: comments}
+            return axios.put(APIRootPath, ticket).then((res) => res.data)
+                .catch(error => console.log(error));
         }
+
     }
 }

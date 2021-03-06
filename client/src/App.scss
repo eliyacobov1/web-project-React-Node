@@ -36,6 +36,12 @@ body {
 		width: fit-content;
 	}
 
+	#wrapper {
+		margin-left:auto;
+		margin-right:auto;
+		width:960px;
+	}
+
 	.wrapper-row {
 		display: flex;
 		flex-direction: row;
@@ -90,6 +96,22 @@ body {
 		font-size: 12px;
 	}
 
+	.bold-line {
+		width: -moz-fit-content;
+		background-color:var(--fontColor)
+	}
+
+	.label {
+		color: white;
+		height: fit-content;
+		width: fit-content;
+		padding: 5px;
+		border-radius: 10px;
+		font-size: 12px;
+		background-color: #ff9800;
+		margin: auto auto 10px 5px;
+	}
+
 	.page-section{
 		display: flex;
 		flex-direction: column;
@@ -128,8 +150,7 @@ body {
 		cursor: pointer;
 	}
 
-	.clone-btn {
-		background-color: #4CAF50;
+	.bottom-right-btn {
 		border: none;
 		color: white;
 		padding: 10px 25px;
@@ -137,9 +158,10 @@ body {
 		text-decoration: none;
 		display: inline-block;
 		font-size: 16px;
-		margin: auto 0 auto auto;
+		margin: auto 0 auto 5px;
 		cursor: pointer;
 	}
+
 
 	.tickets {
 
@@ -159,6 +181,21 @@ body {
 			padding: 10px 20px;
 			transition: box-shadow .2s ease-in-out;
 			position: relative;
+
+			.comment{
+				width: 60%;
+				flex-shrink: 0;
+				border-radius: 8px;
+				background-color: var(--bg);
+				box-shadow: 0 2px 6px 1px var(--borderColor);
+				margin-bottom: 5px;
+				display: flex;
+				flex-direction: column;
+				border: 1px solid var(--borderColor);
+				padding: 10px 10px;
+				transition: box-shadow .2s ease-in-out;
+				position: relative;
+			}
 
 			&:hover {
 				box-shadow: 0 2px 6px 1px var(--borderColor);

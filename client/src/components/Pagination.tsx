@@ -51,8 +51,9 @@ export class Pagination extends React.Component<{api: ApiClient, app: App},
      * appropriate to the new page and re-render the main App component
      */
     switchPage = async (pageNum: number) => {
+        this.app.restoreTickets() // restore hidden tickets before moving to next page
         this.app.setState({
-            tickets: await this.api.getTicketPage(pageNum)
+            tickets: await this.api.getPage(pageNum)
         });
         this.setState({
             currentPage: pageNum
@@ -99,7 +100,6 @@ export class Pagination extends React.Component<{api: ApiClient, app: App},
     render() {
         // only 1 page or numTicket field of app was not defined
         if (this.state.totalPages === 1) return null;
-        console.log(this.state.totalPages)
         const {currentPage} = this.state;
         const pages = this.fetchPageNumbers();
 
