@@ -19,7 +19,7 @@ export type PaginationState = {
 export class Pagination extends React.Component<{api: ApiClient, app: App},
     PaginationState> {
     private api: ApiClient;
-    private app: App;
+    private readonly app: App;
 
     constructor(props: { api: ApiClient, app: App }) {
         super(props);
@@ -42,7 +42,7 @@ export class Pagination extends React.Component<{api: ApiClient, app: App},
             this.setState({
             // @ts-ignore
             totalPages: Math.ceil(this.app.state.numTickets/ PAGE_SIZE)
-            }))
+        }))
     }
 
     /**
@@ -51,14 +51,17 @@ export class Pagination extends React.Component<{api: ApiClient, app: App},
      * appropriate to the new page and re-render the main App component
      */
     switchPage = async (pageNum: number) => {
-        this.app.restoreTickets() // restore hidden tickets before moving to next page
-        this.app.setState({
-            tickets: await this.api.getPage(pageNum)
+        const app = this.app
+        app.restoreTickets() // restore hidden tickets before moving to next page
+        app.setState({
+            tickets: await this.api.getPage(pageNum, app.state.search),
+            numTickets: (await this.api.getTickets(app.state.search)).length
         });
         this.setState({
-            currentPage: pageNum
+            currentPage: pageNum,
+            // @ts-ignore
+            totalPages: Math.ceil(this.app.state.numTickets/ PAGE_SIZE)
         })
-        return false;
     }
 
     /**
@@ -98,8 +101,6 @@ export class Pagination extends React.Component<{api: ApiClient, app: App},
     }
 
     render() {
-        // only 1 page or numTicket field of app was not defined
-        if (this.state.totalPages === 1) return null;
         const {currentPage} = this.state;
         const pages = this.fetchPageNumbers();
 

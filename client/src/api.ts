@@ -1,5 +1,5 @@
 import axios from 'axios';
-import {APIPageLimitQuery, APIRootPagePath, APIRootPath} from '@fed-exam/config';
+import {APIPageLimitQuery, APIPageQuery, APIRootPagePath, APIRootPath, APISearchQuery} from '@fed-exam/config';
 
 export const PAGE_SIZE = 20  // PAGE_SIZE is now an API constant
 
@@ -24,22 +24,32 @@ export type Comment = {
 }
 
 export type ApiClient = {
-    getPage: (page: number) => Promise<Ticket[]>;
-    getTickets: () => Promise<Ticket[]>;
+    getPage: (page: number, searchVal: string) => Promise<Ticket[]>;
+    getTickets: (searchVal: string) => Promise<Ticket[]>;
     clone: (ticket: Ticket) => Promise<Ticket>;
     addComment: (ticket: Ticket, comment: Comment) => Promise<Ticket>;
 }
 
 export const createApiClient = (): ApiClient => {
     return {
-        getTickets: () => {
+        getTickets: (searchVal: string) => {
+            if(searchVal !== ''){
+                return axios.get(`${APIRootPath}${APISearchQuery}${searchVal}`)
+                    .then((res) => res.data);
+            }
             return axios.get(APIRootPath).then((res) => res.data);
         },
 
         /**
          * Q2.b get request endpoint for a specific page
          */
-        getPage: (page: number) => {
+        getPage: (page: number, searchVal: string) => {
+            if(searchVal !== ''){
+                // get paginated data with accordance to searchVal
+                return axios.get(`${APIRootPath}${APISearchQuery}${searchVal}&${APIPageQuery}\
+                ${page}${APIPageLimitQuery}${PAGE_SIZE}`)
+                    .then((res) => res.data).catch(error => console.log(error));
+            }
             return axios.get(`${APIRootPagePath}${page}${APIPageLimitQuery}${PAGE_SIZE}`)
                 .then((res) => res.data).catch(error => console.log(error));
         },

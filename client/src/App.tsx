@@ -33,9 +33,8 @@ export class App extends React.PureComponent<{}, AppState> {
 
 	async componentDidMount() {
 		this.setState({
-			tickets: await api.getPage(1),
-			theme: LIGHT_MODE,
-			numTickets: (await api.getTickets()).length
+			tickets: await api.getPage(1, this.state.search),
+			numTickets: (await api.getTickets(this.state.search)).length
 		});
 	}
 
@@ -124,7 +123,7 @@ export class App extends React.PureComponent<{}, AppState> {
 
 		this.setState({
 			hiddenTickets: hiddenTickets
-		} )
+		})
 	}
 
 	/**
@@ -190,11 +189,16 @@ export class App extends React.PureComponent<{}, AppState> {
 		return <TicketList app={this} tickets={tickets}/>
 	}
 
-	onSearch = async (val: string, newPage?: number) => {
+	/**
+	 * 2.d make a get request and return search results from server
+	 */
+	onSearch = async (val: string) => {
 		clearTimeout(this.searchDebounce);
 		this.searchDebounce = setTimeout(async () => {
 			this.setState({
-				search: val
+				search: val,
+				tickets: await api.getPage(1, val),
+				numTickets: (await api.getTickets(val)).length
 			});
 		}, 300);
 	}
@@ -225,11 +229,9 @@ export class App extends React.PureComponent<{}, AppState> {
 	}
 
 	render() {
-		const {tickets, hiddenTickets, theme} = this.state;
+		const {tickets, hiddenTickets, theme, numTickets} = this.state;
 		const numHiddenTickets = hiddenTickets ? hiddenTickets.length : 0;
-		const filteredTickets = tickets ? tickets.filter((t) =>
-								(t.title.toLowerCase() + t.content.toLowerCase())
-								.includes(this.state.search.toLowerCase())) : null;
+
 		return (
 			<div id="wrapper"> {/* ensures everything stays in place on window resize */}
 				<main>
@@ -240,12 +242,13 @@ export class App extends React.PureComponent<{}, AppState> {
 					<input type="search" placeholder="Search..." onChange={(e) => this.onSearch(e.target.value)}/>
 				</header>
 				<div className='results wrapper-row'>
-				{filteredTickets ? <div>Showing {filteredTickets.length-numHiddenTickets} results</div> : null }
+				{tickets ? <div>Showing {tickets.length-numHiddenTickets} results</div> : null }
 				{this.renderHiddenCount(numHiddenTickets)}
 				</div>
-				{filteredTickets ? this.renderTickets(filteredTickets) : <h2>Loading..</h2>}
-				{/* render pagination component only when not using search bar*/}
-				{this.state.search === '' && <div className='page-section'><Pagination api={api} app={this}/></div>}
+				{tickets ? this.renderTickets(tickets) : <h2>Loading..</h2>}
+				{/* render pagination component only when there is more than 1 page */}
+				{tickets && tickets.length > 0 && tickets.length < (numTickets || 0) &&
+				<div className='page-section'><Pagination api={api} app={this}/></div>}
 				</main>
 			</div>)
 	}

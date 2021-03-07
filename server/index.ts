@@ -1,9 +1,8 @@
 import express from 'express';
 import bodyParser = require('body-parser');
-import { tempData } from './temp-data';
+import { tempData, cachedData } from './temp-data';
 import { serverAPIPort, APIPath } from '@fed-exam/config';
-import {findTicketIndex, uniqueID} from './utils'
-
+import {findTicketIndex, searchTerm, uniqueID} from './utils'
 console.log('starting server', { serverAPIPort, APIPath });
 
 const app = express();
@@ -24,15 +23,26 @@ app.use((_, res, next) => {
  */
 app.get(APIPath, (req, res) => {
   // @ts-ignore
-  const searchParam: string = req.query.superSearch;
-  // @ts-ignore
   const page: number = parseInt(req.query.page);
   // @ts-ignore
   const pageSize: number = parseInt(req.query.PageLimit);
+  // @ts-ignore
+  const searchParam: string = req.query.superSearch;
 
   // 2.d search mechanism implementation
   if (searchParam){
-
+    if (cachedData.searchVal !== searchParam){ // cache search results for near future use
+      const tickets = searchTerm(searchParam);
+      cachedData.searchVal = searchParam;
+      cachedData.tickets = tickets;
+    }
+    if (!page){
+      res.send(cachedData.tickets);
+    }
+    else{ // return requested search data
+      const paginatedData = cachedData.tickets.slice((page - 1) * pageSize, page * pageSize);
+      res.send(paginatedData);
+    }
   }
   else if (!page){ // return all available ticket data
     res.send(tempData);
